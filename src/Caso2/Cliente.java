@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.bind.DatatypeConverter;
 
@@ -58,6 +60,7 @@ public class Cliente {
 	private InputStream is;
 	
 	private KeyPair keyPair;
+	private SecretKey desKey;
 	
 	public static void main(String[] args) throws IOException {
 		new Cliente();
@@ -167,6 +170,7 @@ public class Cliente {
 					X509Certificate cert = Certificado.generateV3Certificate(keyPair);
 					imprimircert(cert);
 					leerCertificado();
+					descifrar(leerllave());
 				  }
 				  catch (Exception e) {
 					// TODO: handle exception
@@ -193,15 +197,45 @@ public class Cliente {
 		
 		try {
 			X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
-			out.println("OK");
-			
 			System.out.println(cert.toString());
-			
+			out.println("OK");
 		} catch (CertificateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
+	
+	public byte[] leerllave()
+	{
+		byte[] data = new byte[1024];
+		try {
+			int count = is.read(data);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		if (data!= null)
+			{
+				System.out.println("llave: "+data);
+			}
+		return data;
+	}
+	
+	public void descifrar(byte [] cipheredText) {
+		try {
+		
+		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+		cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+		byte [] clearText = cipher.doFinal(cipheredText);
+		String s3 = new String(clearText);
+		System.out.println("clave original: " + s3);
+		}
+		catch (Exception e) {
+		System.out.println("Excepcion: " + e.getMessage());
+		}
+		}
 	
 //	public void imprimircert(X509Certificate certificado)
 //	{
