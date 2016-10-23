@@ -1,8 +1,11 @@
 package Caso2;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -12,6 +15,7 @@ import sun.security.x509.*;
 import java.security.cert.*;
 import java.security.*;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 
@@ -23,6 +27,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyPairGeneratorSpi;
+import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -114,14 +119,14 @@ public class Cliente {
 			
 			if(in.readLine().equals("OK"))
 			{
-				
-				  try {
-					X509Certificate cert = Certificado.generateV3Certificate(keyPair);
-					imprimircert(cert);
-				  }
-				  catch (Exception e) {
-					// TODO: handle exception
-				}
+				out.println("CERTFICADOCLIENTE");
+				System.out.println("respuesta: "+in.readLine());
+				out.println("OK");
+				System.out.println("respuesta: "+in.readLine());
+				out.println("CIFRADOKS+");
+				System.out.println("respuesta: "+in.readLine());
+				out.println("CIFRADOLS1");
+				System.out.println("respuesta: "+in.readLine());
 			}
 			else if(respuesta.equals("ERROR"))
 			{
@@ -164,17 +169,25 @@ public class Cliente {
 		}	
 	}
 	
-	
-	public void imprimircert(X509Certificate certificado)
+	public void imprimircert(X509Certificate certificado) throws Exception
 	{
-		String s = certificado.toString();
-		String[] array = s.split("\n");
-		for (int i = 0; i < array.length; i++) {
-			String temp = array[i];
-			temp.replace("\n", "");
-			out.println(temp);
-		}
+		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+		PemWriter pWrt = new PemWriter(out);
+		PemObject pemObj = new PemObject("CERTIFICATE",Collections.EMPTY_LIST, certificado.getEncoded());
+		pWrt.writeObject(pemObj);
+		pWrt.close();
 	}
+	
+//	public void imprimircert(X509Certificate certificado)
+//	{
+//		String s = certificado.toString();
+//		String[] array = s.split("\n");
+//		for (int i = 0; i < array.length; i++) {
+//			String temp = array[i];
+//			temp.replace("\n", "");
+//			out.println(temp);
+//		}
+//	}
 	
 	
 //	@SuppressWarnings("deprecation")
