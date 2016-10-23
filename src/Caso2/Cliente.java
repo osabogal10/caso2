@@ -1,12 +1,17 @@
 package Caso2;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.cert.Certificate;
@@ -27,7 +32,9 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyPairGeneratorSpi;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.bouncycastle.x509.X509V1CertificateGenerator;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -48,6 +55,7 @@ public class Cliente {
 	private String algA;
 	private String algD;
 	
+	private InputStream is;
 	
 	private KeyPair keyPair;
 	
@@ -67,7 +75,8 @@ public class Cliente {
 		socket = new Socket();
 		socket.connect(new InetSocketAddress("localhost", puerto));
 		 out = new PrintWriter( socket.getOutputStream( ), true );
-         in = new BufferedReader( new InputStreamReader( socket.getInputStream( ) ) );
+		 is = socket.getInputStream();
+         in = new BufferedReader( new InputStreamReader( is ) );
          generarLlaves();
          
          if(puerto == 4444)
@@ -157,6 +166,7 @@ public class Cliente {
 				  try {
 					X509Certificate cert = Certificado.generateV3Certificate(keyPair);
 					imprimircert(cert);
+					leerCertificado();
 				  }
 				  catch (Exception e) {
 					// TODO: handle exception
@@ -171,11 +181,26 @@ public class Cliente {
 	
 	public void imprimircert(X509Certificate certificado) throws Exception
 	{
-		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+		
 		PemWriter pWrt = new PemWriter(out);
 		PemObject pemObj = new PemObject("CERTIFICATE",Collections.EMPTY_LIST, certificado.getEncoded());
 		pWrt.writeObject(pemObj);
-		pWrt.close();
+		pWrt.flush();
+	}
+	
+	public void leerCertificado()
+	{
+		
+		try {
+			X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
+			out.println("OK");
+			
+			System.out.println(cert.toString());
+			
+		} catch (CertificateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 //	public void imprimircert(X509Certificate certificado)
