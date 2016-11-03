@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.cert.Certificate;
@@ -24,13 +25,20 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Random;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.x500.X500Principal;
 import javax.xml.bind.DatatypeConverter;
 
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.X509;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.KeyPairGeneratorSpi;
@@ -60,7 +68,7 @@ public class Cliente {
 	private InputStream is;
 	
 	private KeyPair keyPair;
-	private SecretKey desKey;
+	private SecretKey llaveSim;
 	
 	public static void main(String[] args) throws IOException {
 		new Cliente();
@@ -97,6 +105,8 @@ public class Cliente {
          
          
 	}
+	
+	
 	
 	private void generarLlaves() {
 		KeyPairGenerator gen;
@@ -155,6 +165,9 @@ public class Cliente {
 		if(respuesta.equals("OK"))
 		{
 			out.println("ALGORITMOS:AES:RSA:HMACSHA256");
+			algS = "AES";
+			algA = "RSA";
+			algD = "HMACSHA256";
 //			System.out.println("Insete algoritmo simetrico.");
 //			algS = consola.readLine();
 //			System.out.println("Insete algoritmo asimetrico.");
@@ -169,11 +182,18 @@ public class Cliente {
 				  try {
 					X509Certificate cert = Certificado.generateV3Certificate(keyPair);
 					imprimircert(cert);
-					leerCertificado();
-					descifrar(leerllave());
+					X509Certificate certServ = 	leerCertificado();
+					byte[] arr = leerllave();
+					
+					llaveSim = descifrar(arr);
+					byte[] cifrada = cifrarLlave(certServ.getPublicKey());
+					String codificada = codificarHex(cifrada);
+					out.println(codificada);
+					consultar();
 				  }
 				  catch (Exception e) {
 					// TODO: handle exception
+					  e.printStackTrace();
 				}
 			}
 			else if(respuesta.equals("ERROR"))
@@ -181,6 +201,26 @@ public class Cliente {
 				System.out.println("ERROR EN EL SERVIDOR");
 			}
 		}	
+	}
+	
+	public byte[] hmacDigest(byte[] msg, Key key, String algo) throws NoSuchAlgorithmException,
+	InvalidKeyException, IllegalStateException, UnsupportedEncodingException {
+		Mac mac = Mac.getInstance(algo);
+		mac.init(key);
+
+		byte[] bytes = mac.doFinal(msg);
+		return bytes;
+	}
+	
+	public void consultar() throws IOException, InvalidKeyException, NoSuchAlgorithmException, IllegalStateException
+	{
+		if(in.readLine() == "OK")
+		{
+			String consulta = "201517263";
+			String integridad = codificarHex(hmacDigest(decodificarHex(consulta), llaveSim, algD));
+			
+			out.println(consulta+":"+integridad);
+		}
 	}
 	
 	public void imprimircert(X509Certificate certificado) throws Exception
@@ -192,50 +232,74 @@ public class Cliente {
 		pWrt.flush();
 	}
 	
-	public void leerCertificado()
+	public X509Certificate leerCertificado()
 	{
-		
+		X509Certificate cert = null;
 		try {
-			X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
+			 cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
 			System.out.println(cert.toString());
 			out.println("OK");
+			
 		} catch (CertificateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return cert;
 	}
 	
-	public byte[] leerllave()
+	public byte[] leerllave() throws IOException
 	{
-		byte[] data = new byte[1024];
-		try {
-			int count = is.read(data);
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		if (data!= null)
-			{
-				System.out.println("llave: "+data);
-			}
-		return data;
+		String linea = in.readLine();
+		linea = in.readLine();
+		byte[] llaveSimServidor = decodificarHex(linea);
+		return llaveSimServidor;
 	}
 	
-	public void descifrar(byte [] cipheredText) {
-		try {
+	public byte[] decodificarHex(String ss)
+	{
+		byte[] ret = new byte[ss.length()/2];
+		for (int i = 0 ; i < ret.length ; i++) {
+			ret[i] = (byte) Integer.parseInt(ss.substring(i*2,(i+1)*2), 16);
+		}
+		return ret;
+	}
+	
+	public SecretKey descifrar(byte [] cipheredText) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
 		
-		Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
-		cipher.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
-		byte [] clearText = cipher.doFinal(cipheredText);
-		String s3 = new String(clearText);
-		System.out.println("clave original: " + s3);
+		
+		Cipher decifrador = Cipher.getInstance(algA);
+		decifrador.init(Cipher.DECRYPT_MODE, keyPair.getPrivate());
+		byte[] llaveDecifrada = decifrador.doFinal(cipheredText);
+		
+		SecretKeySpec llaveRecibida = new SecretKeySpec(llaveDecifrada, algS);
+		return llaveRecibida;
+		
+	}
+	
+	public byte[] cifrarLlave(Key key ) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
+	{
+		KeyGenerator keygen = KeyGenerator.getInstance(algS);
+		keygen.init(128);
+		SecretKey llave = keygen.generateKey();
+		
+		Cipher cifrador = Cipher.getInstance(algA);
+		cifrador.init(Cipher.ENCRYPT_MODE, key);
+		byte [] encriptada = cifrador.doFinal(llave.getEncoded());
+		
+		return encriptada;
+
+	}
+	
+	public String codificarHex (byte[] arr)
+	{
+		String ret = "";
+		for (int i = 0 ; i < arr.length ; i++) {
+			String g = Integer.toHexString(((char)arr[i])&0x00ff);
+			ret += (g.length()==1?"0":"") + g;
 		}
-		catch (Exception e) {
-		System.out.println("Excepcion: " + e.getMessage());
-		}
-		}
+		return ret;
+	}
+		
 	
 //	public void imprimircert(X509Certificate certificado)
 //	{
