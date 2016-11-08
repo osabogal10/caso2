@@ -190,6 +190,8 @@ public class Cliente {
 					String codificada = codificarHex(cifrada);
 					out.println(codificada);
 					consultar();
+					String serv =in.readLine();
+					leerResultado(serv);
 				  }
 				  catch (Exception e) {
 					// TODO: handle exception
@@ -212,14 +214,34 @@ public class Cliente {
 		return bytes;
 	}
 	
-	public void consultar() throws IOException, InvalidKeyException, NoSuchAlgorithmException, IllegalStateException
+	public static byte[] symmetricDecryption (byte[] msg, Key key , String algo)
+			throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, 
+			NoSuchAlgorithmException, NoSuchPaddingException {
+		algo = algo + 
+				(algo.equals("DES") || algo.equals("AES")?"/ECB/PKCS5Padding":"");
+		Cipher decifrador = Cipher.getInstance(algo); 
+		decifrador.init(Cipher.DECRYPT_MODE, key); 
+		return decifrador.doFinal(msg);
+	}
+	
+	public void leerResultado(String resp) throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException
 	{
-		if(in.readLine() == "OK")
+		String respuesta = codificarHex(symmetricDecryption(decodificarHex(resp), llaveSim, algS));
+		System.out.println(respuesta);
+	}
+	
+	public void consultar() throws IOException, InvalidKeyException, NoSuchAlgorithmException, IllegalStateException, IllegalBlockSizeException, BadPaddingException, NoSuchPaddingException
+	{
+		if(in.readLine().equals("OK"))
 		{
 			String consulta = "201517263";
-			String integridad = codificarHex(hmacDigest(decodificarHex(consulta), llaveSim, algD));
 			
-			out.println(consulta+":"+integridad);
+			byte[] digest = hmacDigest(consulta.getBytes(),llaveSim, algD);
+			byte[] consultaCifrada = symmetricEncryption(consulta.getBytes(), llaveSim, algS);
+			byte[] digestCifrado = symmetricEncryption(digest, llaveSim, algS);
+			String resp = codificarHex(consultaCifrada)+":"+codificarHex(digestCifrado);
+			System.out.println(resp);
+			out.println(resp);
 		}
 	}
 	
@@ -274,6 +296,16 @@ public class Cliente {
 		SecretKeySpec llaveRecibida = new SecretKeySpec(llaveDecifrada, algS);
 		return llaveRecibida;
 		
+	}
+	
+	public static byte[] symmetricEncryption (byte[] msg, Key key , String algo)
+			throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, 
+			NoSuchAlgorithmException, NoSuchPaddingException {
+		algo = algo + 
+				(algo.equals("DES") || algo.equals("AES")?"/ECB/PKCS5Padding":"");
+		Cipher decifrador = Cipher.getInstance(algo); 
+		decifrador.init(Cipher.ENCRYPT_MODE, key); 
+		return decifrador.doFinal(msg);
 	}
 	
 	public byte[] cifrarLlave(Key key ) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException
