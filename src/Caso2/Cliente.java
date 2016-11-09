@@ -79,10 +79,10 @@ public class Cliente {
 	
 	public Cliente()  throws IOException
 	{
-		
-		System.out.println("Puerto");
+//		System.out.println("Puerto");
 		consola = new BufferedReader(new InputStreamReader(System.in));
 //		int puerto = Integer.parseInt(consola.readLine());
+		int puerto = 4443;
 		socket = new Socket();
 		socket.connect(new InetSocketAddress("localhost", puerto));
 		 out = new PrintWriter( socket.getOutputStream( ), true );
@@ -90,18 +90,18 @@ public class Cliente {
          in = new BufferedReader( new InputStreamReader( is ) );
          generarLlaves();
          
-//         if(puerto == 4444)
-//         {
-//        	 conexion4444();
-//         }
-//         else if (puerto == 4443)
-//         {
-//        	 conexion4443();
-//         }
-//         else
-//         {
-//        	 System.out.println("PUERTO INVALIDO");
-//         }
+         if(puerto == 4444)
+         {
+        	 conexion4444();
+         }
+         else if (puerto == 4443)
+         {
+        	 conexion4443();
+         }
+         else
+         {
+        	 System.out.println("PUERTO INVALIDO");
+         }
          
          
 	}
