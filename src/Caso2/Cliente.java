@@ -82,7 +82,7 @@ public class Cliente {
 		
 		System.out.println("Puerto");
 		consola = new BufferedReader(new InputStreamReader(System.in));
-		int puerto = Integer.parseInt(consola.readLine());
+//		int puerto = Integer.parseInt(consola.readLine());
 		socket = new Socket();
 		socket.connect(new InetSocketAddress("localhost", puerto));
 		 out = new PrintWriter( socket.getOutputStream( ), true );
@@ -90,18 +90,18 @@ public class Cliente {
          in = new BufferedReader( new InputStreamReader( is ) );
          generarLlaves();
          
-         if(puerto == 4444)
-         {
-        	 conexion4444();
-         }
-         else if (puerto == 4443)
-         {
-        	 conexion4443();
-         }
-         else
-         {
-        	 System.out.println("PUERTO INVALIDO");
-         }
+//         if(puerto == 4444)
+//         {
+//        	 conexion4444();
+//         }
+//         else if (puerto == 4443)
+//         {
+//        	 conexion4443();
+//         }
+//         else
+//         {
+//        	 System.out.println("PUERTO INVALIDO");
+//         }
          
          
 	}
@@ -331,61 +331,5 @@ public class Cliente {
 		}
 		return ret;
 	}
-		
 	
-//	public void imprimircert(X509Certificate certificado)
-//	{
-//		String s = certificado.toString();
-//		String[] array = s.split("\n");
-//		for (int i = 0; i < array.length; i++) {
-//			String temp = array[i];
-//			temp.replace("\n", "");
-//			out.println(temp);
-//		}
-//	}
-	
-	
-//	@SuppressWarnings("deprecation")
-//	public X509Certificate crearCertificado()
-//	{
-//		Date startDate = new Date();                // time from which certificate is valid
-//		Date expiryDate = new Date( System.currentTimeMillis() + 86400000L);               // time after which certificate is not valid
-//		BigInteger serialNumber = new BigInteger(32,new Random());       // serial number for certificate
-//		           // private key of the certifying authority (ca) certificate
-//		X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
-//		X500Principal subjectName = new X500Principal("CN=Test V3 Certificate");
-//		 
-//		certGen.setSerialNumber(serialNumber);
-//		//certGen.setIssuerDN(caCert.getSubjectX500Principal());
-//		certGen.setNotBefore(startDate);
-//		certGen.setNotAfter(expiryDate);
-//		certGen.setSubjectDN(subjectName);
-//		certGen.setPublicKey(kPublica);
-//		certGen.setSignatureAlgorithm("RSA");
-//		X509Certificate cert = null;
-//		try {
-//			cert = certGen.generate(kPrivada, "BC");
-//		} catch (CertificateEncodingException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (InvalidKeyException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (IllegalStateException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (NoSuchProviderException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (NoSuchAlgorithmException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (SignatureException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		return cert; 
-//	}
-	
-
 }
